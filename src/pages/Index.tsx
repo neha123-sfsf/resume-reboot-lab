@@ -1,11 +1,35 @@
-// Update this page (the content is just a fallback if you fail to update the page)
 
-const Index = () => {
+import React, { useEffect } from 'react';
+import HeroSection from '@/components/HeroSection';
+import UploadSection from '@/components/UploadSection';
+import AnalysisSection from '@/components/AnalysisSection';
+import Sidebar from '@/components/Sidebar';
+
+const Index: React.FC = () => {
+  useEffect(() => {
+    // Set up CTRL + ALT + Recruit keyboard shortcut
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.altKey && event.key === 'r') {
+        console.log('CTRL + ALT + Recruit shortcut activated');
+        console.log('API Endpoint: https://404jobnotfound-nehapatil03.hf.space/analyze');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-white">
+      <Sidebar />
+      
+      <div className="ml-16 transition-all duration-300"> {/* Adjust margin to account for sidebar */}
+        <HeroSection />
+        <UploadSection />
+        <AnalysisSection />
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -97,5 +98,40 @@
 
   body {
     @apply bg-background text-foreground;
+    scroll-behavior: smooth;
+  }
+  
+  html {
+    @apply scroll-smooth;
+  }
+}
+
+@layer components {
+  .gradient-card {
+    @apply rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl;
+  }
+
+  .gradient-card-blue {
+    @apply bg-gradient-soft-blue;
+  }
+
+  .gradient-card-peach {
+    @apply bg-gradient-soft-peach;
+  }
+
+  .gradient-card-green {
+    @apply bg-gradient-soft-green;
+  }
+  
+  .hover-scale {
+    @apply transition-transform duration-200 hover:scale-105;
+  }
+  
+  .button-primary {
+    @apply bg-bright-blue hover:bg-opacity-80 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg;
+  }
+  
+  .input-primary {
+    @apply border-gray-300 rounded-lg p-4 w-full focus:ring-2 focus:ring-bright-blue focus:border-transparent transition-all duration-300;
   }
 }
