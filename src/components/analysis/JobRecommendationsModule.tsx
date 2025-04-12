@@ -1,79 +1,73 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Briefcase, FileDown, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-
-interface JobListing {
-  id: string;
-  title: string;
-  company: string;
-  location: string;
-  datePosted: string;
-  summary: string;
-  matchScore: number;
-}
+import { getJobRecommendations, generateCoverLetter, JobRecommendation } from '@/lib/api';
 
 const JobRecommendationsModule: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [jobListings, setJobListings] = useState<JobRecommendation[]>([]);
+  const [generatingCoverLetter, setGeneratingCoverLetter] = useState<string | null>(null);
 
-  // Mock data
-  const jobListings: JobListing[] = [
-    {
-      id: '1',
-      title: 'Senior Frontend Developer',
-      company: 'Tech Innovations Inc.',
-      location: 'San Francisco, CA (Remote)',
-      datePosted: '2 days ago',
-      summary: 'Looking for an experienced frontend developer with React, TypeScript, and UI/UX skills to join our growing team.',
-      matchScore: 92
-    },
-    {
-      id: '2',
-      title: 'UI/UX Engineer',
-      company: 'Creative Solutions',
-      location: 'New York, NY',
-      datePosted: '1 week ago',
-      summary: 'Seeking a talented UI/UX engineer with strong frontend skills to design and implement beautiful user interfaces.',
-      matchScore: 88
-    },
-    {
-      id: '3',
-      title: 'Full Stack Developer',
-      company: 'Digital Platforms Ltd.',
-      location: 'Austin, TX (Hybrid)',
-      datePosted: '3 days ago',
-      summary: 'Join our team to build responsive web applications using modern JavaScript frameworks and backend technologies.',
-      matchScore: 82
-    },
-    {
-      id: '4',
-      title: 'Frontend Architect',
-      company: 'WebScale Solutions',
-      location: 'Chicago, IL',
-      datePosted: '5 days ago',
-      summary: 'Lead our frontend development efforts and architect scalable solutions for enterprise clients.',
-      matchScore: 76
-    },
-    {
-      id: '5',
-      title: 'React Developer',
-      company: 'App Studios',
-      location: 'Seattle, WA (Remote)',
-      datePosted: '1 day ago',
-      summary: 'Create engaging user experiences with React, Redux, and modern CSS frameworks.',
-      matchScore: 75
+  useEffect(() => {
+    fetchJobRecommendations();
+  }, []);
+
+  const fetchJobRecommendations = async () => {
+    setIsLoading(true);
+    try {
+      const response = await getJobRecommendations();
+      if (response.status === 'success' && response.data) {
+        setJobListings(response.data);
+      } else {
+        toast.error('Failed to load job recommendations');
+      }
+    } catch (error) {
+      console.error('Error fetching job recommendations:', error);
+      toast.error('An error occurred while fetching job recommendations');
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
 
-  const handleDownloadCoverLetter = (jobId: string) => {
-    toast.success(`Generating cover letter for job #${jobId}...`);
-    // In a real app, this would download or generate a cover letter
+  const handleDownloadCoverLetter = async (jobId: string) => {
+    setGeneratingCoverLetter(jobId);
+    try {
+      const response = await generateCoverLetter(jobId);
+      if (response.status === 'success' && response.data) {
+        if (response.data.download_url) {
+          window.open(response.data.download_url, '_blank');
+          toast.success('Cover letter downloaded');
+        } else if (response.data.content) {
+          // If we get content instead of URL, create downloadable file
+          const blob = new Blob([response.data.content], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `Cover_Letter_${jobId}.docx`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          toast.success('Cover letter downloaded');
+        } else {
+          toast.error('Cover letter format not supported');
+        }
+      } else {
+        toast.error('Failed to generate cover letter');
+      }
+    } catch (error) {
+      console.error('Error generating cover letter:', error);
+      toast.error('An error occurred while generating the cover letter');
+    } finally {
+      setGeneratingCoverLetter(null);
+    }
   };
 
   return (
@@ -84,13 +78,22 @@ const JobRecommendationsModule: React.FC = () => {
       <div className="flex justify-between items-center">
         <h3 className="text-2xl font-semibold">Job Recommendations</h3>
         
-        <Button 
-          onClick={toggleExpand} 
-          variant="outline"
-          className="p-2"
-        >
-          {isExpanded ? <ChevronUp /> : <ChevronDown />}
-        </Button>
+        <div className="flex items-center">
+          {isLoading && (
+            <div className="mr-4">
+              <div className="w-6 h-6 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+            </div>
+          )}
+          
+          <Button 
+            onClick={toggleExpand} 
+            variant="outline"
+            className="p-2"
+            disabled={isLoading}
+          >
+            {isExpanded ? <ChevronUp /> : <ChevronDown />}
+          </Button>
+        </div>
       </div>
       
       {!isExpanded && (
@@ -157,15 +160,21 @@ const JobRecommendationsModule: React.FC = () => {
                       size="sm"
                       className="flex items-center"
                       onClick={() => handleDownloadCoverLetter(job.id)}
+                      disabled={generatingCoverLetter === job.id}
                     >
-                      <FileDown className="mr-1 h-4 w-4" />
-                      Cover Letter
+                      {generatingCoverLetter === job.id ? (
+                        <div className="w-4 h-4 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mr-2" />
+                      ) : (
+                        <FileDown className="mr-1 h-4 w-4" />
+                      )}
+                      {generatingCoverLetter === job.id ? 'Generating...' : 'Cover Letter'}
                     </Button>
                     
                     <Button 
                       variant="outline" 
                       size="sm"
                       className="flex items-center"
+                      disabled={!job.coverLetterUrl}
                     >
                       <ExternalLink className="mr-1 h-4 w-4" />
                       View Job

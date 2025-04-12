@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload } from 'lucide-react';
 import { toast } from 'sonner';
+import { uploadResume } from '@/lib/api';
 
 const UploadSection: React.FC = () => {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -28,7 +29,7 @@ const UploadSection: React.FC = () => {
     setJobDescription(e.target.value);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!resumeFile) {
       toast.error('Please upload your resume.');
       return;
@@ -41,22 +42,23 @@ const UploadSection: React.FC = () => {
 
     setIsUploading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsUploading(false);
-      toast.success('Analysis complete!');
+    try {
+      const response = await uploadResume(resumeFile, jobDescription);
       
-      const analysisSection = document.getElementById('analysis');
-      if (analysisSection) {
-        analysisSection.scrollIntoView({ behavior: 'smooth' });
+      if (response.status === 'success') {
+        toast.success('Analysis complete!');
+        const analysisSection = document.getElementById('analysis');
+        if (analysisSection) {
+          analysisSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      } else {
+        toast.error(`Upload failed: ${response.message}`);
       }
-    }, 1500);
-  };
-
-  const scrollToAnalysis = () => {
-    const analysisSection = document.getElementById('analysis');
-    if (analysisSection) {
-      analysisSection.scrollIntoView({ behavior: 'smooth' });
+    } catch (error) {
+      console.error('Error during upload:', error);
+      toast.error('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsUploading(false);
     }
   };
 

@@ -1,10 +1,27 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import ATSScoreModule from './analysis/ATSScoreModule';
 import ResumeFeedbackModule from './analysis/ResumeFeedbackModule';
 import JobRecommendationsModule from './analysis/JobRecommendationsModule';
 
 const AnalysisSection: React.FC = () => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    // Check if the user has submitted a resume
+    const checkSubmission = async () => {
+      // In a real app, we would check if there's data from the API
+      // For now, we'll just make it visible
+      setIsVisible(true);
+    };
+
+    checkSubmission();
+  }, []);
+
+  if (!isVisible) {
+    return null;
+  }
+
   return (
     <section 
       id="analysis" 

@@ -1,28 +1,45 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, FileCheck, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { getResumeFeedback, ResumeFeedbackData } from '@/lib/api';
+import { toast } from 'sonner';
 
 const ResumeFeedbackModule: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [feedbackData, setFeedbackData] = useState<ResumeFeedbackData | null>(null);
 
-  // Mock data
-  const formatScore = 85;
-  const parsingScore = 92;
-  const feedbackPoints = [
-    { type: 'success', message: 'Clear and concise summary statement' },
-    { type: 'success', message: 'Good use of action verbs in experience section' },
-    { type: 'warning', message: 'Quantify your achievements with more specific metrics' },
-    { type: 'warning', message: 'Skills section could be more comprehensive' },
-    { type: 'error', message: 'Missing relevant certifications that could boost your profile' },
-    { type: 'success', message: 'Education section is well-formatted' },
-    { type: 'warning', message: 'Consider adding more industry-specific keywords' },
-  ];
+  useEffect(() => {
+    fetchResumeFeedback();
+  }, []);
+
+  const fetchResumeFeedback = async () => {
+    setIsLoading(true);
+    try {
+      const response = await getResumeFeedback();
+      if (response.status === 'success' && response.data) {
+        setFeedbackData(response.data);
+      } else {
+        toast.error('Failed to load resume feedback data');
+      }
+    } catch (error) {
+      console.error('Error fetching resume feedback:', error);
+      toast.error('An error occurred while fetching resume feedback');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
+
+  const formatScore = feedbackData?.format_score || 0;
+  const parsingScore = feedbackData?.parsing_score || 0;
+  const feedbackPoints = feedbackData?.feedback_points || [];
+  const improvementSuggestions = feedbackData?.improvement_suggestions || [];
 
   return (
     <div className={cn(
@@ -32,19 +49,30 @@ const ResumeFeedbackModule: React.FC = () => {
       <div className="flex justify-between items-center">
         <h3 className="text-2xl font-semibold">Resume Feedback</h3>
         
-        <Button 
-          onClick={toggleExpand} 
-          variant="outline"
-          className="p-2"
-        >
-          {isExpanded ? <ChevronUp /> : <ChevronDown />}
-        </Button>
+        <div className="flex items-center">
+          {isLoading && (
+            <div className="mr-4">
+              <div className="w-6 h-6 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+            </div>
+          )}
+          
+          <Button 
+            onClick={toggleExpand} 
+            variant="outline"
+            className="p-2"
+            disabled={isLoading}
+          >
+            {isExpanded ? <ChevronUp /> : <ChevronDown />}
+          </Button>
+        </div>
       </div>
       
       {!isExpanded && (
         <div className="mt-4">
           <p className="text-gray-700">
-            Your resume is well-structured but has a few areas for improvement. Expand to see detailed feedback.
+            {isLoading 
+              ? 'Loading resume feedback...' 
+              : 'Your resume is well-structured but has a few areas for improvement. Expand to see detailed feedback.'}
           </p>
         </div>
       )}
@@ -108,11 +136,9 @@ const ResumeFeedbackModule: React.FC = () => {
           <div className="bg-white bg-opacity-70 p-4 rounded-lg">
             <h4 className="font-semibold text-lg mb-2">Improvement Suggestions</h4>
             <ul className="list-disc pl-5 space-y-1">
-              <li>Add measurable achievements to highlight your impact (e.g., "Increased sales by 20%").</li>
-              <li>Include more industry-specific keywords from the job description.</li>
-              <li>Consider adding a skills section with technical and soft skills.</li>
-              <li>Keep your resume to 1-2 pages for better readability.</li>
-              <li>Use bullet points instead of paragraphs for better scanning.</li>
+              {improvementSuggestions.map((suggestion, index) => (
+                <li key={index}>{suggestion}</li>
+              ))}
             </ul>
           </div>
         </div>

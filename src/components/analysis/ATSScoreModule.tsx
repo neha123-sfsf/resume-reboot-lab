@@ -1,26 +1,46 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { getATSScore, ATSScoreData } from '@/lib/api';
+import { toast } from 'sonner';
 
 const ATSScoreModule: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [atsData, setAtsData] = useState<ATSScoreData | null>(null);
 
-  // Mock data
-  const atsScore = 78;
-  const matchedKeywords = [
-    'React', 'TypeScript', 'UI/UX', 'Frontend Development', 'JavaScript',
-    'Responsive Design', 'API Integration', 'Git', 'Agile'
-  ];
-  const missedKeywords = [
-    'Vue.js', 'CI/CD', 'Docker', 'AWS', 'Redux'
-  ];
+  useEffect(() => {
+    fetchATSScore();
+  }, []);
+
+  const fetchATSScore = async () => {
+    setIsLoading(true);
+    try {
+      const response = await getATSScore();
+      if (response.status === 'success' && response.data) {
+        setAtsData(response.data);
+      } else {
+        toast.error('Failed to load ATS score data');
+      }
+    } catch (error) {
+      console.error('Error fetching ATS score:', error);
+      toast.error('An error occurred while fetching ATS score data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
+
+  const atsScore = atsData?.score || 0;
+  const matchedKeywords = atsData?.matched_keywords || [];
+  const missedKeywords = atsData?.missed_keywords || [];
+  const tips = atsData?.tips || [];
 
   return (
     <div className={cn(
@@ -31,10 +51,16 @@ const ATSScoreModule: React.FC = () => {
         <h3 className="text-2xl font-semibold">ATS Score Analysis</h3>
         
         <div className="flex items-center">
-          {!isExpanded && (
+          {!isExpanded && !isLoading && (
             <div className="mr-4 text-center">
               <span className="block text-3xl font-bold">{atsScore}%</span>
               <span className="text-sm text-gray-600">ATS Match</span>
+            </div>
+          )}
+          
+          {isLoading && (
+            <div className="mr-4">
+              <div className="w-6 h-6 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
             </div>
           )}
           
@@ -42,6 +68,7 @@ const ATSScoreModule: React.FC = () => {
             onClick={toggleExpand} 
             variant="outline"
             className="p-2"
+            disabled={isLoading}
           >
             {isExpanded ? <ChevronUp /> : <ChevronDown />}
           </Button>
@@ -117,10 +144,9 @@ const ATSScoreModule: React.FC = () => {
           <div className="bg-white bg-opacity-70 p-4 rounded-lg">
             <h4 className="font-semibold text-lg mb-2">Optimization Tips</h4>
             <ul className="list-disc pl-5 space-y-1">
-              <li>Include more of the missing keywords naturally in your resume.</li>
-              <li>Format your resume to be easily readable by ATS systems.</li>
-              <li>Use standard section headings that ATS systems recognize.</li>
-              <li>Remove graphics, tables, and complex formatting that can confuse ATS systems.</li>
+              {tips.map((tip, index) => (
+                <li key={index}>{tip}</li>
+              ))}
             </ul>
           </div>
         </div>
