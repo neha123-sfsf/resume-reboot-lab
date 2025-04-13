@@ -46,31 +46,44 @@ const UploadSection: React.FC = () => {
     setIsUploading(true);
 
     try {
+      // Step 1: Upload the file to store it
       const formData = new FormData();
-      formData.append("mode", "upload");
-      formData.append("resume_file", resumeFile); // ✅ exact key backend expects
-      formData.append("job_description", jobDescription);
-      formData.append("application_status", "rejected");
+      formData.append("file", resumeFile);
 
-      const response = await fetch("https://nehapatil03-404jobnotfound.hf.space/analyze", {
+      const uploadRes = await fetch("https://nehapatil03-404jobnotfound.hf.space/upload_resume/", {
         method: "POST",
         body: formData
       });
 
-      if (!response.ok) {
-        const err = await response.text();
-        throw new Error(`Analysis error: ${response.status} - ${err}`);
+      if (!uploadRes.ok) {
+        const err = await uploadRes.text();
+        throw new Error(`Upload error: ${uploadRes.status} - ${err}`);
       }
 
-      const analyzeData = await response.json();
-      toast.success('Analysis complete!');
+      // Step 2: Send the file again with mode=upload for analysis
+      const analyzeForm = new FormData();
+      analyzeForm.append("mode", "upload");
+      analyzeForm.append("resume_file", resumeFile); // Important for File(...) param in FastAPI
+      analyzeForm.append("job_description", jobDescription);
+      analyzeForm.append("application_status", "rejected");
 
+      const analyzeRes = await fetch("https://nehapatil03-404jobnotfound.hf.space/analyze", {
+        method: "POST",
+        body: analyzeForm
+      });
+
+      if (!analyzeRes.ok) {
+        const err = await analyzeRes.text();
+        throw new Error(`Analysis error: ${analyzeRes.status} - ${err}`);
+      }
+
+      toast.success('Analysis complete!');
       const analysisSection = document.getElementById('analysis');
       if (analysisSection) {
         analysisSection.scrollIntoView({ behavior: 'smooth' });
       }
     } catch (error) {
-      console.error('Error during analysis:', error);
+      console.error('Error during upload/analysis:', error);
       toast.error('An unexpected error occurred. Please try again.');
     } finally {
       setIsUploading(false);
