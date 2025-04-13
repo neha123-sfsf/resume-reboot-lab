@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload } from 'lucide-react';
 import { toast } from 'sonner';
+import { ANALYZE_ENDPOINT } from '@/lib/api'; // ✅ Reusing endpoint from api.ts
 
 const UploadSection: React.FC = () => {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -49,7 +50,7 @@ const UploadSection: React.FC = () => {
       formData.append("job_description", jobDescription);
       formData.append("application_status", "rejected");
 
-      const response = await fetch("https://nehapatil03-404jobnotfound.hf.space/analyze", {
+      const response = await fetch(ANALYZE_ENDPOINT, {
         method: "POST",
         body: formData
       });
