@@ -51,7 +51,7 @@ const UploadSection: React.FC = () => {
       formData.append("file", resumeFile);
 
       // Step 1: Upload the file to the backend
-      const uploadRes = await fetch("https://404jobnotfound-nehapatil03.hf.space/upload_resume/", {
+      const uploadRes = await fetch("https://nehapatil03-404jobnotfound.hf.space/upload_resume/", {
         method: "POST",
         body: formData
       });
@@ -65,7 +65,7 @@ const UploadSection: React.FC = () => {
       const resumeFileName = uploadData.resume_file;
 
       // Step 2: Analyze the resume
-      const analyzeRes = await fetch("https://404jobnotfound-nehapatil03.hf.space/analyze", {
+      const analyzeRes = await fetch("https://nehapatil03-404jobnotfound.hf.space/analyze", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
