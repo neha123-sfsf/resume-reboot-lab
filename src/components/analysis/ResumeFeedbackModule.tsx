@@ -16,12 +16,12 @@ const ResumeFeedbackModule: React.FC = () => {
   const fetchResumeFeedback = async () => {
     setIsLoading(true);
     try {
-      const formData = new FormData();
-      formData.append("mode", "resume_feedback");
-
       const response = await fetch("https://nehapatil03-404jobnotfound.hf.space/analyze", {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ mode: "resume_feedback" })
       });
 
       if (!response.ok) throw new Error("Failed to fetch resume feedback");
