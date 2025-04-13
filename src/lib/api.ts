@@ -41,14 +41,15 @@ async function callApi<T = any>(
 ): Promise<ApiResponse<T>> {
   const formData = new FormData();
 
+  // ✅ Important: append the file first
+  if (file) {
+    formData.append("resume_file", file);
+  }
+
   if (payload) {
     Object.entries(payload).forEach(([key, value]) => {
       formData.append(key, value);
     });
-  }
-
-  if (file) {
-    formData.append("resume_file", file);
   }
 
   try {
