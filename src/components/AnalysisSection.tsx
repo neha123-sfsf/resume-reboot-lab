@@ -6,19 +6,36 @@ import JobRecommendationsModule from './analysis/JobRecommendationsModule';
 
 const AnalysisSection: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
 
   useEffect(() => {
-    // Check if the user has submitted a resume
-    const checkSubmission = async () => {
-      // In a real app, we would check if there's data from the API
-      // For now, we'll just make it visible
+    const analyzeResume = async () => {
+      const resumeFile = localStorage.getItem("uploadedResume"); // assuming you store resume as Blob or base64
+      const jobDescription = localStorage.getItem("jobDescription") || "";
+      const applicationStatus = localStorage.getItem("applicationStatus") || "";
+
+      if (!resumeFile) return;
+
+      const formData = new FormData();
+      formData.append("resume_file", new Blob([resumeFile]), "resume.pdf");
+      formData.append("job_description", jobDescription);
+      formData.append("application_status", applicationStatus);
+
+      const response = await fetch("https://nehapatil03-404jobnotfound.hf.space/analyze", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+      console.log("✅ Backend Response:", data);
+      setAnalysisResult(data);
       setIsVisible(true);
     };
 
-    checkSubmission();
+    analyzeResume();
   }, []);
 
-  if (!isVisible) {
+  if (!isVisible || !analysisResult) {
     return null;
   }
 
@@ -33,9 +50,9 @@ const AnalysisSection: React.FC = () => {
         </h2>
         
         <div className="space-y-10">
-          <ATSScoreModule />
-          <ResumeFeedbackModule />
-          <JobRecommendationsModule />
+          <ATSScoreModule score={analysisResult.ats_score} />
+          <ResumeFeedbackModule feedback={analysisResult.resume_feedback} />
+          <JobRecommendationsModule jobs={analysisResult.job_recommendations} />
         </div>
       </div>
     </section>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,24 +13,28 @@ const CoverLetterGenerator: React.FC = () => {
   const [companyName, setCompanyName] = useState('');
   const [jobDescription, setJobDescription] = useState('');
   const [coverLetterContent, setCoverLetterContent] = useState('');
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!jobTitle || !companyName || !jobDescription) {
       toast.error('Please fill all fields');
       return;
     }
-    
+
     setIsGenerating(true);
-    
+
     try {
-      const response = await generateCoverLetter();
-      
+      const response = await generateCoverLetter(jobTitle, companyName, jobDescription);
+
       if (response.status === 'success' && response.data) {
-        if (response.data.content) {
-          setCoverLetterContent(response.data.content);
+        if (response.data.cover_letter) {
+          setCoverLetterContent(response.data.cover_letter);
+          if (response.data.path) {
+            setDownloadUrl(`https://404jobnotfound-nehapatil03.hf.space/download/${response.data.path}`);
+          }
           toast.success('Cover letter generated successfully');
         } else {
           toast.error('Failed to generate cover letter content');
@@ -48,25 +51,18 @@ const CoverLetterGenerator: React.FC = () => {
   };
 
   const handleDownload = () => {
-    if (!coverLetterContent) return;
-    
-    const blob = new Blob([coverLetterContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Cover_Letter_${companyName.replace(/\s+/g, '_')}.docx`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    if (downloadUrl) {
+      window.open(downloadUrl, '_blank');
+    }
   };
 
   return (
     <div className="min-h-screen bg-white">
       <Sidebar />
-      
+
       <div className="ml-16 transition-all duration-300 py-8 px-4 md:px-8">
         <h1 className="text-3xl font-bold mb-6">Cover Letter Generator</h1>
-        
+
         <div className="grid md:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
@@ -86,7 +82,7 @@ const CoverLetterGenerator: React.FC = () => {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label htmlFor="company-name" className="block text-sm font-medium mb-1">
                     Company Name
@@ -99,7 +95,7 @@ const CoverLetterGenerator: React.FC = () => {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label htmlFor="job-description" className="block text-sm font-medium mb-1">
                     Job Description
@@ -113,7 +109,7 @@ const CoverLetterGenerator: React.FC = () => {
                     required
                   />
                 </div>
-                
+
                 <Button 
                   type="submit" 
                   className="w-full"
@@ -124,12 +120,12 @@ const CoverLetterGenerator: React.FC = () => {
               </form>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle className="flex justify-between items-center">
                 <span>Cover Letter Preview</span>
-                {coverLetterContent && (
+                {coverLetterContent && downloadUrl && (
                   <Button size="sm" variant="outline" onClick={handleDownload}>
                     <FileDown className="mr-1 h-4 w-4" />
                     Download

@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 
 const API_ENDPOINT = "https://404jobnotfound-nehapatil03.hf.space/analyze";
@@ -18,6 +17,7 @@ export interface ApiRequest {
   job_description?: string;
   application_status?: string;
   user_query?: string;
+  job_id?: string; // ✅ Added job_id for cover letter requests
 }
 
 export interface ApiResponse {
@@ -122,10 +122,16 @@ export async function getJobRecommendations(): Promise<ApiResponse> {
   return await callApi({ mode: "job_recommendation" });
 }
 
-export async function generateCoverLetter(jobId?: string): Promise<ApiResponse> {
-  return await callApi({ 
+export async function generateCoverLetter(
+  jobTitle: string,
+  companyName: string,
+  jobDescription: string
+): Promise<ApiResponse> {
+  return await callApi({
     mode: "cover_letter",
-    ...(jobId && { job_id: jobId })
+    job_title: jobTitle,
+    company_name: companyName,
+    job_description: jobDescription,
   });
 }
 
