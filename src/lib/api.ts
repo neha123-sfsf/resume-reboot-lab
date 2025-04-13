@@ -1,7 +1,7 @@
 import { toast } from "sonner";
 
 // 1. Configuration
-export const API_BASE_URL = "https://nehapatil03-404jobnotfound.hf.space/api";
+export const API_BASE_URL = "https://nehapatil03-404jobnotfound.hf.space";
 export const ANALYZE_ENDPOINT = `${API_BASE_URL}/analyze`;
 export const DOWNLOAD_ENDPOINT = `${API_BASE_URL}/download`;
 
