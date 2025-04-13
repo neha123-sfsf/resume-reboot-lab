@@ -1,5 +1,4 @@
-import React, { useState, useCallback } from 'react';
-import { useDropzone } from 'react-dropzone';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload } from 'lucide-react';
@@ -10,8 +9,8 @@ const UploadSection: React.FC = () => {
   const [jobDescription, setJobDescription] = useState('');
   const [isUploading, setIsUploading] = useState(false);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     const validFileTypes = [
       'application/pdf',
       'application/msword',
@@ -24,19 +23,7 @@ const UploadSection: React.FC = () => {
     } else {
       toast.error('Please upload a PDF or Word document.');
     }
-  }, []);
-
-  const { getRootProps, getInputProps } = useDropzone({
-    onDrop,
-    accept: {
-      'application/pdf': ['.pdf'],
-      'application/msword': ['.doc'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
-    },
-    multiple: false,
-    noClick: false,
-    noKeyboard: false
-  });
+  };
 
   const handleJobDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setJobDescription(e.target.value);
@@ -73,8 +60,10 @@ const UploadSection: React.FC = () => {
       }
 
       const result = await response.json();
+
       toast.success('Upload and analysis complete!');
-      
+      console.log('Analysis result:', result);
+
       const analysisSection = document.getElementById('analysis');
       if (analysisSection) {
         analysisSection.scrollIntoView({ behavior: 'smooth' });
@@ -105,17 +94,19 @@ const UploadSection: React.FC = () => {
               Upload your resume in PDF or Word format to get an analysis on how well it matches the job description.
             </p>
 
-            <div
-              {...getRootProps()}
-              className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover-scale cursor-pointer bg-white/80"
-            >
-              <input {...getInputProps()} />
+            <label className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-white/80 cursor-pointer block hover-scale">
               <Upload className="h-12 w-12 text-gray-400 mb-4 mx-auto" />
               <span className="text-gray-600 mb-2 block">
-                {resumeFile ? getShortFileName(resumeFile.name) : 'Click or drag a file to upload'}
+                {resumeFile ? getShortFileName(resumeFile.name) : 'Click to upload your resume'}
               </span>
               <span className="text-sm text-gray-400">PDF or Word files only</span>
-            </div>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx"
+                className="hidden"
+                onChange={onFileChange}
+              />
+            </label>
           </div>
 
           <div className="gradient-card gradient-card-peach p-8 animate-fade-in h-full" style={{ animationDelay: '0.4s' }}>
