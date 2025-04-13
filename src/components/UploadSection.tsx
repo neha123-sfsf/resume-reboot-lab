@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,7 +10,7 @@ const UploadSection: React.FC = () => {
   const [jobDescription, setJobDescription] = useState('');
   const [isUploading, setIsUploading] = useState(false);
 
-  const onDrop = (acceptedFiles: File[]) => {
+  const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     const validFileTypes = [
       'application/pdf',
@@ -24,9 +24,19 @@ const UploadSection: React.FC = () => {
     } else {
       toast.error('Please upload a PDF or Word document.');
     }
-  };
+  }, []);
 
-  const { getRootProps, getInputProps } = useDropzone({ onDrop });
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop,
+    accept: {
+      'application/pdf': ['.pdf'],
+      'application/msword': ['.doc'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
+    },
+    multiple: false,
+    noClick: false,
+    noKeyboard: false
+  });
 
   const handleJobDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setJobDescription(e.target.value);
@@ -46,7 +56,6 @@ const UploadSection: React.FC = () => {
     setIsUploading(true);
 
     try {
-      // Single request to handle both upload and analysis
       const formData = new FormData();
       formData.append("mode", "upload");
       formData.append("resume_file", resumeFile);
@@ -64,18 +73,12 @@ const UploadSection: React.FC = () => {
       }
 
       const result = await response.json();
-      
       toast.success('Upload and analysis complete!');
-      console.log('Analysis result:', result);
-
-      // Scroll to analysis section if needed
+      
       const analysisSection = document.getElementById('analysis');
       if (analysisSection) {
         analysisSection.scrollIntoView({ behavior: 'smooth' });
       }
-
-      // You can use the result data here to update your UI
-      // For example: setAnalysisResult(result.result);
 
     } catch (error) {
       console.error('Error during upload/analysis:', error);
@@ -106,7 +109,7 @@ const UploadSection: React.FC = () => {
               {...getRootProps()}
               className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover-scale cursor-pointer bg-white/80"
             >
-              <input {...getInputProps()} accept=".pdf,.doc,.docx" />
+              <input {...getInputProps()} />
               <Upload className="h-12 w-12 text-gray-400 mb-4 mx-auto" />
               <span className="text-gray-600 mb-2 block">
                 {resumeFile ? getShortFileName(resumeFile.name) : 'Click or drag a file to upload'}
