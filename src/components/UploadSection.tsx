@@ -47,16 +47,47 @@ const UploadSection: React.FC = () => {
     setIsUploading(true);
 
     try {
-      const response = await uploadResume(resumeFile, jobDescription);
+      const formData = new FormData();
+      formData.append("file", resumeFile);
 
-      if (response.status === 'success') {
-        toast.success('Analysis complete!');
-        const analysisSection = document.getElementById('analysis');
-        if (analysisSection) {
-          analysisSection.scrollIntoView({ behavior: 'smooth' });
-        }
-      } else {
-        toast.error(`Upload failed: ${response.message}`);
+      // Step 1: Upload the file to the backend
+      const uploadRes = await fetch("https://404jobnotfound-nehapatil03.hf.space/upload_resume/", {
+        method: "POST",
+        body: formData
+      });
+
+      if (!uploadRes.ok) {
+        const err = await uploadRes.text();
+        throw new Error(`Upload error: ${uploadRes.status} - ${err}`);
+      }
+
+      const uploadData = await uploadRes.json();
+      const resumeFileName = uploadData.resume_file;
+
+      // Step 2: Analyze the resume
+      const analyzeRes = await fetch("https://404jobnotfound-nehapatil03.hf.space/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          mode: "upload",
+          resume_file: resumeFileName,
+          job_description: jobDescription,
+          application_status: "rejected"
+        })
+      });
+
+      if (!analyzeRes.ok) {
+        const err = await analyzeRes.text();
+        throw new Error(`Analysis error: ${analyzeRes.status} - ${err}`);
+      }
+
+      const analyzeData = await analyzeRes.json();
+      toast.success('Analysis complete!');
+      const analysisSection = document.getElementById('analysis');
+      if (analysisSection) {
+        analysisSection.scrollIntoView({ behavior: 'smooth' });
       }
     } catch (error) {
       console.error('Error during upload:', error);
