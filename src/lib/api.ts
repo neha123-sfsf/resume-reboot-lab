@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 
-const API_ENDPOINT = "https://nehapatil03-404jobnotfound.hf.space/upload_resume";
+const API_ENDPOINT = "https://nehapatil03-404jobnotfound.hf.space/upload_resume/";
 
 export type ApiMode = 
   | "upload" 

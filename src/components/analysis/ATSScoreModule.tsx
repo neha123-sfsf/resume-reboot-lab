@@ -24,20 +24,21 @@ const ATSScoreModule: React.FC = () => {
   const fetchATSScore = async () => {
     setIsLoading(true);
     try {
-      const formData = new FormData();
-      formData.append("mode", "ats_score");
-
       const response = await fetch("https://nehapatil03-404jobnotfound.hf.space/analyze", {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ mode: "ats_score" })
       });
 
       const result = await response.json();
+
       if (result && typeof result.score === "number") {
         setAtsData({
           score: result.score,
           matched_keywords: extractKeywordsFromReasoning(result.reasoning?.["Keyword Overlap"] || ""),
-          missed_keywords: [], // You can extract or calculate this if available in backend
+          missed_keywords: [],
           tips: [result.reasoning?.Conclusion || "Try improving formatting or keyword match."]
         });
       } else {
@@ -72,7 +73,7 @@ const ATSScoreModule: React.FC = () => {
     )}>
       <div className="flex justify-between items-center">
         <h3 className="text-2xl font-semibold">ATS Score Analysis</h3>
-        
+
         <div className="flex items-center">
           {!isExpanded && !isLoading && (
             <div className="mr-4 text-center">
@@ -80,13 +81,13 @@ const ATSScoreModule: React.FC = () => {
               <span className="text-sm text-gray-600">ATS Match</span>
             </div>
           )}
-          
+
           {isLoading && (
             <div className="mr-4">
               <div className="w-6 h-6 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
             </div>
           )}
-          
+
           <Button 
             onClick={toggleExpand} 
             variant="outline"
@@ -97,7 +98,7 @@ const ATSScoreModule: React.FC = () => {
           </Button>
         </div>
       </div>
-      
+
       {isExpanded && (
         <div className="mt-6 space-y-6 animate-fade-in">
           <div className="bg-white bg-opacity-70 p-4 rounded-lg">
@@ -123,7 +124,7 @@ const ATSScoreModule: React.FC = () => {
                 </svg>
               </div>
             </div>
-            
+
             <div className="text-center mb-4">
               <h4 className="font-semibold text-lg">
                 {atsScore >= 70 ? 'Good Match!' : 'Needs Improvement'}
@@ -133,7 +134,7 @@ const ATSScoreModule: React.FC = () => {
               </p>
             </div>
           </div>
-          
+
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-white bg-opacity-70 p-4 rounded-lg">
               <div className="flex items-center mb-4">
@@ -148,7 +149,7 @@ const ATSScoreModule: React.FC = () => {
                 ))}
               </div>
             </div>
-            
+
             <div className="bg-white bg-opacity-70 p-4 rounded-lg">
               <div className="flex items-center mb-4">
                 <X className="text-red-500 mr-2" />
@@ -163,7 +164,7 @@ const ATSScoreModule: React.FC = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white bg-opacity-70 p-4 rounded-lg">
             <h4 className="font-semibold text-lg mb-2">Optimization Tips</h4>
             <ul className="list-disc pl-5 space-y-1">
