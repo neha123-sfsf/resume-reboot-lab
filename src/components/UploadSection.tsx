@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload } from 'lucide-react';
 import { toast } from 'sonner';
-import { API_BASE_URL, ANALYZE_ENDPOINT, UPLOAD_ENDPOINT } from '@/lib/api'; // <-- Ensure UPLOAD_ENDPOINT is exported
+import { ANALYZE_ENDPOINT, UPLOAD_ENDPOINT } from '@/lib/api';
 
 const UploadSection: React.FC = () => {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -44,13 +44,13 @@ const UploadSection: React.FC = () => {
     setIsUploading(true);
 
     try {
-      // === Step 1: Upload to /upload_resume ===
+      // === Step 1: Upload resume and JD ===
       const uploadForm = new FormData();
       uploadForm.append("resume_file", resumeFile);
       uploadForm.append("jd_text", jobDescription);
       uploadForm.append("application_status", "rejected");
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/upload_resume`, {
+      const uploadResponse = await fetch(UPLOAD_ENDPOINT, {
         method: "POST",
         body: uploadForm,
       });
@@ -60,7 +60,7 @@ const UploadSection: React.FC = () => {
         throw new Error(`Upload error: ${err}`);
       }
 
-      // === Step 2: Trigger /analyze for ATS score ===
+      // === Step 2: Trigger analysis via /analyze ===
       const analyzeForm = new FormData();
       analyzeForm.append("mode", "ats_score");
 
