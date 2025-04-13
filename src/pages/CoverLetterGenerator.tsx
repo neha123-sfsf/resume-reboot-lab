@@ -33,7 +33,7 @@ const CoverLetterGenerator: React.FC = () => {
         if (response.data.cover_letter) {
           setCoverLetterContent(response.data.cover_letter);
           if (response.data.path) {
-            setDownloadUrl(`https://404jobnotfound-nehapatil03.hf.space/download/${response.data.path}`);
+            setDownloadUrl(`https://nehapatil03-404jobnotfound.hf.space/download/${response.data.path}`);
           }
           toast.success('Cover letter generated successfully');
         } else {
