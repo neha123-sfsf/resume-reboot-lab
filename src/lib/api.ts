@@ -3,11 +3,11 @@ import { toast } from "sonner";
 // 1. Configuration
 export const API_BASE_URL = "https://nehapatil03-404jobnotfound.hf.space";
 export const ANALYZE_ENDPOINT = `${API_BASE_URL}/analyze`;
+export const UPLOAD_ENDPOINT = `${API_BASE_URL}/upload_resume`;
 export const DOWNLOAD_ENDPOINT = `${API_BASE_URL}/download`;
 
 // 2. Type Definitions
 export type ApiMode = 
-  | "upload" 
   | "ats_score" 
   | "resume_feedback" 
   | "job_recommendation"
@@ -21,8 +21,9 @@ interface ApiResponse<T = any> {
 }
 
 interface UploadResponse {
-  filename: string;
-  [key: string]: any; // Additional response data
+  message: string;
+  resume_file: string;
+  [key: string]: any;
 }
 
 // 3. Core API Handler
@@ -34,22 +35,24 @@ const handleApiError = (error: unknown, defaultMessage: string) => {
 };
 
 async function callApi<T = any>(
-  mode: ApiMode,
+  endpoint: string,
   payload?: Record<string, any>,
   file?: File
 ): Promise<ApiResponse<T>> {
   const formData = new FormData();
-  formData.append("mode", mode);
 
-  if (file) formData.append("resume_file", file);
   if (payload) {
     Object.entries(payload).forEach(([key, value]) => {
       formData.append(key, value);
     });
   }
 
+  if (file) {
+    formData.append("resume_file", file);
+  }
+
   try {
-    const response = await fetch(ANALYZE_ENDPOINT, {
+    const response = await fetch(endpoint, {
       method: "POST",
       body: formData,
     });
@@ -70,27 +73,29 @@ async function callApi<T = any>(
 
 // 4. Service Methods
 export const apiService = {
-  uploadResume: async (file: File, jobDescription: string): Promise<ApiResponse<UploadResponse>> => 
-    callApi("upload", { job_description: jobDescription, application_status: "rejected" }, file),
-
-  getATSScore: async (): Promise<ApiResponse> => 
-    callApi("ats_score"),
-
-  getResumeFeedback: async (): Promise<ApiResponse> => 
-    callApi("resume_feedback"),
-
-  getJobRecommendations: async (): Promise<ApiResponse> => 
-    callApi("job_recommendation"),
-
-  generateCoverLetter: async (
-    jobTitle: string,
-    companyName: string,
+  uploadResume: async (
+    file: File,
     jobDescription: string
-  ): Promise<ApiResponse> => 
-    callApi("cover_letter", { job_title: jobTitle, company_name: companyName, job_description: jobDescription }),
+  ): Promise<ApiResponse<UploadResponse>> =>
+    callApi(UPLOAD_ENDPOINT, {
+      jd_text: jobDescription,
+      application_status: "rejected",
+    }, file),
 
-  sendChatbotQuery: async (query: string): Promise<ApiResponse> => 
-    callApi("chatbot", { user_query: query }),
+  getATSScore: async (): Promise<ApiResponse> =>
+    callApi(ANALYZE_ENDPOINT, { mode: "ats_score" }),
+
+  getResumeFeedback: async (): Promise<ApiResponse> =>
+    callApi(ANALYZE_ENDPOINT, { mode: "resume_feedback" }),
+
+  getJobRecommendations: async (): Promise<ApiResponse> =>
+    callApi(ANALYZE_ENDPOINT, { mode: "job_recommendation" }),
+
+  generateCoverLetter: async (): Promise<ApiResponse> =>
+    callApi(ANALYZE_ENDPOINT, { mode: "cover_letter" }),
+
+  sendChatbotQuery: async (query: string): Promise<ApiResponse> =>
+    callApi(ANALYZE_ENDPOINT, { mode: "chatbot", user_query: query }),
 
   downloadFile: async (filename: string): Promise<Blob> => {
     try {
@@ -113,16 +118,3 @@ export const apiService = {
     }
   }
 };
-
-// 5. Usage Example
-/*
-const { uploadResume, downloadFile } = apiService;
-
-const analyzeResume = async (file: File, jobDesc: string) => {
-  const result = await uploadResume(file, jobDesc);
-  if (result.status === "success") {
-    const blob = await downloadFile(result.data.filename);
-    // Handle download
-  }
-};
-*/

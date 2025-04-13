@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload } from 'lucide-react';
 import { toast } from 'sonner';
-import { ANALYZE_ENDPOINT } from '@/lib/api'; // ✅ Reusing endpoint from api.ts
+import { API_BASE_URL, ANALYZE_ENDPOINT, UPLOAD_ENDPOINT } from '@/lib/api'; // <-- Ensure UPLOAD_ENDPOINT is exported
 
 const UploadSection: React.FC = () => {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -44,35 +44,49 @@ const UploadSection: React.FC = () => {
     setIsUploading(true);
 
     try {
-      const formData = new FormData();
-      formData.append("mode", "upload");
-      formData.append("resume_file", resumeFile);
-      formData.append("job_description", jobDescription);
-      formData.append("application_status", "rejected");
+      // === Step 1: Upload to /upload_resume ===
+      const uploadForm = new FormData();
+      uploadForm.append("resume_file", resumeFile);
+      uploadForm.append("jd_text", jobDescription);
+      uploadForm.append("application_status", "rejected");
 
-      const response = await fetch(ANALYZE_ENDPOINT, {
+      const uploadResponse = await fetch(`${API_BASE_URL}/upload_resume`, {
         method: "POST",
-        body: formData
+        body: uploadForm,
       });
 
-      if (!response.ok) {
-        const err = await response.text();
-        throw new Error(`Error: ${response.status} - ${err}`);
+      if (!uploadResponse.ok) {
+        const err = await uploadResponse.text();
+        throw new Error(`Upload error: ${err}`);
       }
 
-      const result = await response.json();
+      // === Step 2: Trigger /analyze for ATS score ===
+      const analyzeForm = new FormData();
+      analyzeForm.append("mode", "ats_score");
 
-      toast.success('Upload and analysis complete!');
-      console.log('Analysis result:', result);
+      const analyzeResponse = await fetch(ANALYZE_ENDPOINT, {
+        method: "POST",
+        body: analyzeForm,
+      });
 
+      if (!analyzeResponse.ok) {
+        const err = await analyzeResponse.text();
+        throw new Error(`Analysis error: ${err}`);
+      }
+
+      const analysisResult = await analyzeResponse.json();
+      console.log('✅ Analysis Result:', analysisResult);
+      toast.success('Resume analyzed successfully!');
+
+      // Optional: Scroll to results section
       const analysisSection = document.getElementById('analysis');
       if (analysisSection) {
         analysisSection.scrollIntoView({ behavior: 'smooth' });
       }
 
     } catch (error) {
-      console.error('Error during upload/analysis:', error);
-      toast.error(error instanceof Error ? error.message : 'An unexpected error occurred');
+      console.error('❌ Upload/Analysis error:', error);
+      toast.error(error instanceof Error ? error.message : 'Unexpected error occurred');
     } finally {
       setIsUploading(false);
     }
