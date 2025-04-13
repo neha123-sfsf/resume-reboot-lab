@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload } from 'lucide-react';
 import { toast } from 'sonner';
-import { uploadResume } from '@/lib/api';
 
 const UploadSection: React.FC = () => {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -27,7 +26,7 @@ const UploadSection: React.FC = () => {
     }
   };
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
+  const { getRootProps, getInputProps } = useDropzone({ onDrop });
 
   const handleJobDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setJobDescription(e.target.value);
@@ -48,49 +47,30 @@ const UploadSection: React.FC = () => {
 
     try {
       const formData = new FormData();
-      formData.append("file", resumeFile);
+      formData.append("mode", "upload");
+      formData.append("resume_file", resumeFile); // ✅ exact key backend expects
+      formData.append("job_description", jobDescription);
+      formData.append("application_status", "rejected");
 
-      // Step 1: Upload the file to the backend
-      const uploadRes = await fetch("https://nehapatil03-404jobnotfound.hf.space/upload_resume/", {
+      const response = await fetch("https://nehapatil03-404jobnotfound.hf.space/analyze", {
         method: "POST",
         body: formData
       });
 
-      if (!uploadRes.ok) {
-        const err = await uploadRes.text();
-        throw new Error(`Upload error: ${uploadRes.status} - ${err}`);
+      if (!response.ok) {
+        const err = await response.text();
+        throw new Error(`Analysis error: ${response.status} - ${err}`);
       }
 
-      const uploadData = await uploadRes.json();
-      const resumeFileName = uploadData.resume_file;
-
-      // Step 2: Analyze the resume
-      const analyzeRes = await fetch("https://nehapatil03-404jobnotfound.hf.space/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          mode: "upload",
-          resume_file: resumeFileName,
-          job_description: jobDescription,
-          application_status: "rejected"
-        })
-      });
-
-      if (!analyzeRes.ok) {
-        const err = await analyzeRes.text();
-        throw new Error(`Analysis error: ${analyzeRes.status} - ${err}`);
-      }
-
-      const analyzeData = await analyzeRes.json();
+      const analyzeData = await response.json();
       toast.success('Analysis complete!');
+
       const analysisSection = document.getElementById('analysis');
       if (analysisSection) {
         analysisSection.scrollIntoView({ behavior: 'smooth' });
       }
     } catch (error) {
-      console.error('Error during upload:', error);
+      console.error('Error during analysis:', error);
       toast.error('An unexpected error occurred. Please try again.');
     } finally {
       setIsUploading(false);
