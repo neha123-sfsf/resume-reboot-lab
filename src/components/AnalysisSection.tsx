@@ -41,27 +41,22 @@ const AnalysisSection: React.FC = () => {
 
   useEffect(() => {
     const analyzeResume = async () => {
-      const resumeFile = localStorage.getItem("uploadedResume");
-      const jobDescription = localStorage.getItem("jobDescription") || "";
-      const applicationStatus = localStorage.getItem("applicationStatus") || "";
+      try {
+        const response = await fetch("https://nehapatil03-404jobnotfound.hf.space/analyze", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ mode: "all" }),
+        });
 
-      if (!resumeFile) return;
-
-      const formData = new FormData();
-      formData.append("resume_file", new Blob([resumeFile]), "resume.pdf");
-      formData.append("job_description", jobDescription);
-      formData.append("application_status", applicationStatus);
-      formData.append("mode", "all");
-
-      const response = await fetch("https://nehapatil03-404jobnotfound.hf.space/analyze", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await response.json();
-      console.log("✅ Backend Response:", data);
-      setAnalysisResult(data);
-      setIsVisible(true);
+        const data = await response.json();
+        console.log("✅ Backend Response:", data);
+        setAnalysisResult(data);
+        setIsVisible(true);
+      } catch (error) {
+        console.error("❌ Failed to fetch analysis:", error);
+      }
     };
 
     analyzeResume();
@@ -71,7 +66,7 @@ const AnalysisSection: React.FC = () => {
     return null;
   }
 
-  // === Normalize reasoning ===
+  // === Normalize ATS reasoning ===
   const normalizedReasoning: { [key: string]: string[] } = {};
   const rawReasoning = analysisResult.ats_score.reasoning || {};
   Object.entries(rawReasoning).forEach(([key, val]) => {
@@ -84,7 +79,6 @@ const AnalysisSection: React.FC = () => {
     }
   });
 
-  // === Extract top keywords and tips for visual display ===
   const matched_keywords =
     normalizedReasoning["Keyword Overlap"]?.[0]?.match(/\b\w+\b/g)?.slice(0, 10) || [];
   const tips = normalizedReasoning["Conclusion"] || [];
@@ -92,9 +86,9 @@ const AnalysisSection: React.FC = () => {
   const atsScoreProps = {
     score: analysisResult.ats_score.score,
     matched_keywords,
-    missed_keywords: [], // Optional: extract from backend later
+    missed_keywords: [], // Optional enhancement
     tips,
-    reasoning: normalizedReasoning
+    reasoning: normalizedReasoning,
   };
 
   return (
