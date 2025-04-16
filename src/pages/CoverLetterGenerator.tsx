@@ -10,38 +10,44 @@ const CoverLetterGenerator: React.FC = () => {
   const [coverLetterContent, setCoverLetterContent] = useState('');
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [hasGenerated, setHasGenerated] = useState(false); // Track if generation happened
+
+  const generateCoverLetter = async () => {
+    setIsGenerating(true);
+    setHasGenerated(true); // Mark that generation attempt has started
+
+    try {
+      const result = await apiService.generateCoverLetter(); // No input required from user
+      if (result.status === "success" && result.data) {
+        if (result.data.cover_letter) {
+          setCoverLetterContent(result.data.cover_letter);
+          if (result.data.path) {
+            setDownloadUrl(`https://nehapatil03-404jobnotfound.hf.space/download/${result.data.path}`);
+          }
+          toast.success('Cover letter generated successfully');
+        } else {
+          toast.error('Failed to generate cover letter content');
+        }
+      } else {
+        toast.error(result.message || 'Failed to generate cover letter');
+      }
+    } catch (error) {
+      console.error('Error generating cover letter:', error);
+      toast.error('An error occurred while generating the cover letter');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   useEffect(() => {
-    // Call API to generate cover letter directly
-    const fetchCoverLetter = async () => {
-      setIsGenerating(true);
-
-      try {
-        const result = await apiService.generateCoverLetter(); // No input required from user
-        if (result.status === "success" && result.data) {
-          if (result.data.cover_letter) {
-            setCoverLetterContent(result.data.cover_letter);
-            if (result.data.path) {
-              setDownloadUrl(`https://nehapatil03-404jobnotfound.hf.space/download/${result.data.path}`);
-            }
-            toast.success('Cover letter generated successfully');
-          } else {
-            toast.error('Failed to generate cover letter content');
-          }
-        } else {
-          toast.error(result.message || 'Failed to generate cover letter');
-        }
-      } catch (error) {
-        console.error('Error generating cover letter:', error);
-        toast.error('An error occurred while generating the cover letter');
-      } finally {
-        setIsGenerating(false);
+    // Only try fetching if the component mounted and generation hasn't happened
+    if (!hasGenerated) {
+      // If there is a cover letter content set, leave as is
+      if (!coverLetterContent) {
+        // Intentionally left blank for initial render
       }
-    };
-
-    fetchCoverLetter();
-
-  }, []); // Empty dependency array: runs only once on mount
+    }
+  }, [hasGenerated, coverLetterContent]);
 
 
   const handleDownload = () => {
@@ -85,7 +91,12 @@ const CoverLetterGenerator: React.FC = () => {
                       <p>Generating your cover letter...</p>
                     </div>
                   ) : (
-                    <p>Loading your cover letter...</p>
+                    <>
+                      <p>Click the button below to generate a cover letter.</p>
+                      <Button onClick={generateCoverLetter} disabled={isGenerating}>
+                        Generate Cover Letter
+                      </Button>
+                    </>
                   )}
                 </div>
               )}
