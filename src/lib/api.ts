@@ -170,3 +170,39 @@ export const apiService = {
     }
   }
 };
+
+export const sendChatbotQuery = async (query: string): Promise<ApiResponse> =>
+  apiService.sendChatbotQuery(query);
+
+export const generateCoverLetter = async (
+  jobTitle: string, 
+  companyName: string, 
+  jobDescription: string
+): Promise<ApiResponse> => {
+  try {
+    const response = await fetch(ANALYZE_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ 
+        mode: "cover_letter", 
+        job_title: jobTitle,
+        company_name: companyName,
+        job_description: jobDescription 
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      status: "success",
+      data
+    };
+  } catch (error) {
+    return handleApiError(error, "Cover letter generation failed");
+  }
+};

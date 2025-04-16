@@ -10,7 +10,7 @@ const AnalysisSection: React.FC = () => {
 
   useEffect(() => {
     const analyzeResume = async () => {
-      const resumeFile = localStorage.getItem("uploadedResume"); // assuming you store resume as Blob or base64
+      const resumeFile = localStorage.getItem("uploadedResume");
       const jobDescription = localStorage.getItem("jobDescription") || "";
       const applicationStatus = localStorage.getItem("applicationStatus") || "";
 
