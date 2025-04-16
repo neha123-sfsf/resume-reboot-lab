@@ -11,7 +11,7 @@ interface ATSScoreData {
     matched_keywords: string[];
     missed_keywords: string[];
     tips: string[];
-    reasoning: { [key: string]: string[] }; // Ensure this matches backend data type
+    reasoning: { [key: string]: string[] };
 }
 
 const ATSScoreModule: React.FC = () => {
@@ -28,14 +28,26 @@ const ATSScoreModule: React.FC = () => {
         try {
             const result = await apiService.getATSScore();
             if (result.status === "success" && result.data) {
-                // Ensure the data structure matches what your backend returns
                 if (typeof result.data.score === "number") {
+                    const rawReasoning = result.data.reasoning || {};
+                    const normalizedReasoning: { [key: string]: string[] } = {};
+
+                    Object.entries(rawReasoning).forEach(([key, val]) => {
+                        if (Array.isArray(val)) {
+                            normalizedReasoning[key] = val;
+                        } else if (typeof val === "string") {
+                            normalizedReasoning[key] = val.split("\n").filter(Boolean);
+                        } else {
+                            normalizedReasoning[key] = [];
+                        }
+                    });
+
                     setAtsData({
                         score: result.data.score,
-                        matched_keywords: extractKeywordsFromReasoning(result.data.reasoning?.["Keyword Overlap"] || ""),
-                        missed_keywords: [], // Your backend does not seem to return missed keywords
-                        tips: [result.data.reasoning?.Conclusion || "Try improving formatting or keyword match."],
-                        reasoning: result.data.reasoning
+                        matched_keywords: extractKeywordsFromReasoning(rawReasoning["Keyword Overlap"] || ""),
+                        missed_keywords: [], // Not provided by backend
+                        tips: normalizedReasoning["Conclusion"] || ["Try improving formatting or keyword match."],
+                        reasoning: normalizedReasoning
                     });
                 } else {
                     toast.error("Invalid ATS response structure");
@@ -164,19 +176,16 @@ const ATSScoreModule: React.FC = () => {
                             </div>
                         </div>
                     </div>
+
                     {/* Display Detailed Reasoning */}
                     <div className="bg-white bg-opacity-70 p-4 rounded-lg">
                         <h4 className="font-semibold text-lg mb-2">Detailed Reasoning</h4>
-                        {Object.entries(reasoning).map(([section, textArray]) => (
+                        {Object.entries(reasoning).map(([section, lines]) => (
                             <div key={section} className="mb-4">
                                 <h5 className="font-medium">{section}</h5>
-                                {Array.isArray(textArray) ? (
-                                    textArray.map((line, index) => (
-                                        <p key={index}>{line}</p>
-                                    ))
-                                ) : (
-                                    <p>{textArray}</p> // Fallback in case it's not an array
-                                )}
+                                {lines.map((line, index) => (
+                                    <p key={index}>{line}</p>
+                                ))}
                             </div>
                         ))}
                     </div>
