@@ -113,6 +113,36 @@ export const apiService = {
   sendChatbotQuery: async (query: string): Promise<ApiResponse> =>
     callApi(ANALYZE_ENDPOINT, { mode: "chatbot", user_query: query }),
 
+  generateCoverLetterForJob: async (jobId: string): Promise<ApiResponse> => {
+    const formData = new FormData();
+    formData.append("mode", "cover_letter");
+    formData.append("job_id", jobId);
+
+    try {
+      const response = await fetch(ANALYZE_ENDPOINT, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {}
+        throw new Error(errorMessage);
+      }
+
+      let data = {};
+      try {
+        data = await response.json();
+      } catch {}
+      return { status: "success", data };
+    } catch (error) {
+      return handleApiError(error, "API request failed");
+    }
+  },
+
   downloadFile: async (filename: string): Promise<Blob> => {
     try {
       const response = await fetch(`${DOWNLOAD_ENDPOINT}/${filename}`);

@@ -1,11 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Briefcase, FileDown, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { apiService } from '@/lib/api';
 
 interface JobRecommendation {
@@ -27,14 +24,15 @@ const JobRecommendationsModule: React.FC = () => {
 
   useEffect(() => {
     fetchJobRecommendations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchJobRecommendations = async () => {
     setIsLoading(true);
     try {
-      const response = await apiService.getJobRecommendations();
-      if (response.status === "success" && Array.isArray(response.data)) {
-        const parsedJobs: JobRecommendation[] = response.data.map((job: any, index: number) => ({
+      const result = await apiService.getJobRecommendations();
+      if (result.status === "success" && Array.isArray(result.data)) {
+        const parsedJobs: JobRecommendation[] = result.data.map((job: any, index: number) => ({
           id: `job-${index}`,
           title: job.title || job.job_title || "Untitled",
           company: job.company || job.employer_name || "Unknown Company",
@@ -63,31 +61,28 @@ const JobRecommendationsModule: React.FC = () => {
   const handleDownloadCoverLetter = async (jobId: string) => {
     setGeneratingCoverLetter(jobId);
     try {
-      const response = await fetch("https://nehapatil03-404jobnotfound.hf.space/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ mode: "cover_letter", job_id: jobId })
-      });
-
-      const result = await response.json();
-      if (result?.path) {
-        const downloadUrl = `https://nehapatil03-404jobnotfound.hf.space/download/${result.path}`;
-        window.open(downloadUrl, "_blank");
-        toast.success("Cover letter downloaded");
-      } else if (result?.cover_letter) {
-        const blob = new Blob([result.cover_letter], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Cover_Letter_${jobId}.docx`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        toast.success("Cover letter downloaded");
+      const result = await apiService.generateCoverLetterForJob(jobId);
+      if (result.status === "success" && result.data) {
+        const { path, cover_letter } = result.data as any;
+        if (path) {
+          const downloadUrl = `https://nehapatil03-404jobnotfound.hf.space/download/${path}`;
+          window.open(downloadUrl, "_blank");
+          toast.success("Cover letter downloaded");
+        } else if (cover_letter) {
+          const blob = new Blob([cover_letter], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `Cover_Letter_${jobId}.docx`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          toast.success("Cover letter downloaded");
+        } else {
+          toast.error("Cover letter not available");
+        }
       } else {
-        toast.error("Cover letter not available");
+        toast.error(result.message || "Cover letter not available");
       }
     } catch (error) {
       console.error("Error generating cover letter:", error);
@@ -98,120 +93,71 @@ const JobRecommendationsModule: React.FC = () => {
   };
 
   return (
-    <Card className={cn("mb-6", isExpanded ? "bg-white" : "bg-gradient-to-br from-blue-50 to-violet-50")}>
-      <CardHeader 
-        className={cn(
-          "cursor-pointer flex flex-row items-center justify-between", 
-          isExpanded ? "border-b" : ""
-        )}
-        onClick={toggleExpand}
-      >
-        <div className="flex items-center">
-          <Briefcase className="h-5 w-5 mr-2 text-blue-600" />
-          <CardTitle className="text-xl">Job Recommendations</CardTitle>
-        </div>
-        {isExpanded ? (
-          <ChevronUp className="h-5 w-5" />
-        ) : (
-          <ChevronDown className="h-5 w-5" />
-        )}
-      </CardHeader>
-      
-      <CardContent className={cn(
-        "transition-all duration-300 overflow-hidden",
-        isExpanded ? "max-h-[2000px]" : "max-h-[190px]"
-      )}>
-        {isLoading ? (
-          <div className="space-y-4 pt-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-[200px]" />
-                  <Skeleton className="h-3 w-[150px]" />
-                </div>
-                <Skeleton className="h-10 w-[140px] rounded-md" />
-              </div>
-            ))}
-          </div>
-        ) : jobListings.length === 0 ? (
-          <div className="text-center py-10 text-gray-500">
-            <p>No job recommendations found.</p>
-            <Button onClick={fetchJobRecommendations} variant="outline" className="mt-4">
-              Try Again
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {jobListings.slice(0, isExpanded ? jobListings.length : 2).map((job) => (
-              <div key={job.id} className="border rounded-md p-4 shadow-sm bg-white">
-                <div className="flex justify-between items-start">
+    <section className="my-12">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <Briefcase className="w-6 h-6" />
+          Job Recommendations
+        </h2>
+        <Button variant="ghost" onClick={toggleExpand} aria-expanded={isExpanded}>
+          {isExpanded ? (
+            <>
+              Hide <ChevronUp className="ml-2 w-4 h-4" />
+            </>
+          ) : (
+            <>
+              Show <ChevronDown className="ml-2 w-4 h-4" />
+            </>
+          )}
+        </Button>
+      </div>
+
+      {isExpanded && (
+        <div className={cn("transition-all", isLoading && "opacity-50 pointer-events-none")}>
+          {isLoading ? (
+            <div className="text-center py-8">Loading job recommendations...</div>
+          ) : jobListings.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">No job recommendations found.</div>
+          ) : (
+            <ul className="space-y-6">
+              {jobListings.map((job) => (
+                <li key={job.id} className="bg-white rounded-lg shadow p-6 flex flex-col md:flex-row md:items-center md:justify-between">
                   <div>
-                    <h3 className="font-semibold text-lg">{job.title}</h3>
-                    <p className="text-sm text-gray-600">
-                      {job.company} • {job.location}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">Posted {job.datePosted}</p>
+                    <h3 className="text-lg font-semibold">{job.title}</h3>
+                    <div className="text-gray-600">{job.company} &mdash; {job.location}</div>
+                    <div className="text-sm text-gray-400 mb-2">Posted: {job.datePosted}</div>
+                    <div className="text-sm text-gray-700 mb-2">Match Score: <span className="font-bold">{job.matchScore}%</span></div>
+                    <div className="text-gray-800 mb-2">{job.summary}</div>
                   </div>
-                  <div className="text-right">
-                    <span className="inline-block bg-green-100 text-green-800 text-xs font-medium px-2.5 py-1 rounded">
-                      {job.matchScore}% Match
-                    </span>
-                  </div>
-                </div>
-                
-                <p className="text-sm text-gray-700 mt-3 line-clamp-2">{job.summary}</p>
-                
-                <div className="flex justify-between mt-4">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="text-xs"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      window.open(`https://www.google.com/search?q=${encodeURIComponent(`${job.title} ${job.company} job`)}`, "_blank");
-                    }}
-                  >
-                    <ExternalLink className="h-3.5 w-3.5 mr-1" />
-                    View Job
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-xs"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDownloadCoverLetter(job.id);
-                    }}
-                    disabled={generatingCoverLetter === job.id}
-                  >
-                    {generatingCoverLetter === job.id ? (
-                      "Generating..."
-                    ) : (
-                      <>
-                        <FileDown className="h-3.5 w-3.5 mr-1" />
-                        Cover Letter
-                      </>
+                  <div className="flex flex-col gap-2 mt-4 md:mt-0 md:ml-6">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleDownloadCoverLetter(job.id)}
+                      disabled={generatingCoverLetter === job.id}
+                      className="flex items-center gap-2"
+                    >
+                      <FileDown className="w-4 h-4" />
+                      {generatingCoverLetter === job.id ? "Generating..." : "Download Cover Letter"}
+                    </Button>
+                    {job.coverLetterUrl && (
+                      <a
+                        href={job.coverLetterUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 flex items-center gap-1 text-sm hover:underline"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        View Cover Letter
+                      </a>
                     )}
-                  </Button>
-                </div>
-              </div>
-            ))}
-            
-            {!isExpanded && jobListings.length > 2 && (
-              <Button 
-                variant="ghost" 
-                onClick={toggleExpand} 
-                className="w-full text-sm text-blue-600 hover:text-blue-800"
-              >
-                Show {jobListings.length - 2} more jobs
-                <ChevronDown className="ml-1 h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </section>
   );
 };
 
