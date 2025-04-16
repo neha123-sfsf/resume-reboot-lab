@@ -29,11 +29,11 @@ interface JobRecommendation {
 interface AnalysisResult {
   ats_score: {
     score: number;
-    keywords: {
+    reasoning: { [key: string]: string | string[] };
+    keywords?: {
       matched: string[];
       unmatched: string[];
     };
-    reasoning: { [key: string]: string | string[] };
   };
   resume_feedback: ResumeFeedbackData;
   job_recommendations: JobRecommendation[];
@@ -70,7 +70,7 @@ const AnalysisSection: React.FC = () => {
     return null;
   }
 
-  // === Normalize ATS reasoning ===
+  // === Normalize reasoning ===
   const normalizedReasoning: { [key: string]: string[] } = {};
   const rawReasoning = analysisResult.ats_score.reasoning || {};
   Object.entries(rawReasoning).forEach(([key, val]) => {
@@ -83,6 +83,7 @@ const AnalysisSection: React.FC = () => {
     }
   });
 
+  // ✅ Construct ATS props
   const atsScoreProps = {
     score: analysisResult.ats_score.score,
     matched_keywords: analysisResult.ats_score.keywords?.matched || [],
