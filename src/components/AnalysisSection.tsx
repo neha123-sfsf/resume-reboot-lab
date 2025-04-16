@@ -1,12 +1,26 @@
-
 import React, { useEffect, useState } from 'react';
 import ATSScoreModule from './analysis/ATSScoreModule';
 import ResumeFeedbackModule from './analysis/ResumeFeedbackModule';
 import JobRecommendationsModule from './analysis/JobRecommendationsModule';
 
+interface AnalysisResult {
+  ats_score: {
+    ats_score: number;
+    resume_file: string;
+    sections: {
+      keyword_overlap: string;
+      formatting_issues: string;
+      missing_sections: string;
+      conclusion: string;
+    };
+  };
+  resume_feedback: string;
+  job_recommendations: string;
+}
+
 const AnalysisSection: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
 
   useEffect(() => {
     const analyzeResume = async () => {
@@ -20,6 +34,7 @@ const AnalysisSection: React.FC = () => {
       formData.append("resume_file", new Blob([resumeFile]), "resume.pdf");
       formData.append("job_description", jobDescription);
       formData.append("application_status", applicationStatus);
+      formData.append("mode", "all");  // Change mode to "all"
 
       const response = await fetch("https://nehapatil03-404jobnotfound.hf.space/analyze", {
         method: "POST",
@@ -50,9 +65,9 @@ const AnalysisSection: React.FC = () => {
         </h2>
         
         <div className="space-y-10">
-          <ATSScoreModule score={analysisResult.ats_score} />
+          <ATSScoreModule score={analysisResult.ats_score.ats_score} />
           <ResumeFeedbackModule feedback={analysisResult.resume_feedback} />
-          <JobRecommendationsModule jobs={analysisResult.job_recommendations} />
+          <JobRecommendationsModule jobs={[analysisResult.job_recommendations]} />
         </div>
       </div>
     </section>
