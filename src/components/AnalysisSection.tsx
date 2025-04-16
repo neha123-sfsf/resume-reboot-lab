@@ -29,6 +29,10 @@ interface JobRecommendation {
 interface AnalysisResult {
   ats_score: {
     score: number;
+    keywords: {
+      matched: string[];
+      unmatched: string[];
+    };
     reasoning: { [key: string]: string | string[] };
   };
   resume_feedback: ResumeFeedbackData;
@@ -79,15 +83,11 @@ const AnalysisSection: React.FC = () => {
     }
   });
 
-  const matched_keywords =
-    normalizedReasoning["Keyword Overlap"]?.[0]?.match(/\b\w+\b/g)?.slice(0, 10) || [];
-  const tips = normalizedReasoning["Conclusion"] || [];
-
   const atsScoreProps = {
     score: analysisResult.ats_score.score,
-    matched_keywords,
-    missed_keywords: [], // Optional enhancement
-    tips,
+    matched_keywords: analysisResult.ats_score.keywords?.matched || [],
+    missed_keywords: analysisResult.ats_score.keywords?.unmatched || [],
+    tips: normalizedReasoning["Conclusion"] || [],
     reasoning: normalizedReasoning,
   };
 
