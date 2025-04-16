@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { apiService } from '@/lib/api';
 
 interface ATSScoreData {
   score: number;
@@ -24,25 +25,21 @@ const ATSScoreModule: React.FC = () => {
   const fetchATSScore = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("https://nehapatil03-404jobnotfound.hf.space/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ mode: "ats_score" })
-      });
-
-      const result = await response.json();
-
-      if (result && typeof result.score === "number") {
-        setAtsData({
-          score: result.score,
-          matched_keywords: extractKeywordsFromReasoning(result.reasoning?.["Keyword Overlap"] || ""),
-          missed_keywords: [],
-          tips: [result.reasoning?.Conclusion || "Try improving formatting or keyword match."]
-        });
+      const result = await apiService.getATSScore();
+      if (result.status === "success" && result.data) {
+        // Ensure the data structure matches what your backend returns
+        if (typeof result.data.score === "number") {
+          setAtsData({
+            score: result.data.score,
+            matched_keywords: extractKeywordsFromReasoning(result.data.reasoning?.["Keyword Overlap"] || ""),
+            missed_keywords: [], // Your backend does not seem to return missed keywords
+            tips: [result.data.reasoning?.Conclusion || "Try improving formatting or keyword match."]
+          });
+        } else {
+          toast.error("Invalid ATS response structure");
+        }
       } else {
-        toast.error("Invalid ATS response structure");
+        toast.error(result.message || "Failed to load ATS score data");
       }
     } catch (error) {
       console.error("Error fetching ATS score:", error);
@@ -88,8 +85,8 @@ const ATSScoreModule: React.FC = () => {
             </div>
           )}
 
-          <Button 
-            onClick={toggleExpand} 
+          <Button
+            onClick={toggleExpand}
             variant="outline"
             className="p-2"
             disabled={isLoading}

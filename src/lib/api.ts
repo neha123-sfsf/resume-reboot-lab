@@ -113,7 +113,7 @@ export const apiService = {
   sendChatbotQuery: async (query: string): Promise<ApiResponse> =>
     callApi(ANALYZE_ENDPOINT, { mode: "chatbot", user_query: query }),
 
-  generateCoverLetterForJob: async (jobId: string): Promise<ApiResponse> => {
+    generateCoverLetterForJob: async (jobId: string): Promise<ApiResponse> => {
     const formData = new FormData();
     formData.append("mode", "cover_letter");
     formData.append("job_id", jobId);

@@ -44,7 +44,7 @@ const JobRecommendationsModule: React.FC = () => {
         }));
         setJobListings(parsedJobs);
       } else {
-        toast.error("Failed to load job recommendations");
+        toast.error(result.message || "Failed to load job recommendations");
       }
     } catch (error) {
       console.error("Error fetching job recommendations:", error);

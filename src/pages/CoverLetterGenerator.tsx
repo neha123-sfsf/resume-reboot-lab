@@ -1,54 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { generateCoverLetter } from '@/lib/api';
+import { apiService } from '@/lib/api'; // Use centralized apiService
 import { toast } from 'sonner';
 import { FileDown } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 
 const CoverLetterGenerator: React.FC = () => {
-  const [jobTitle, setJobTitle] = useState('');
-  const [companyName, setCompanyName] = useState('');
-  const [jobDescription, setJobDescription] = useState('');
   const [coverLetterContent, setCoverLetterContent] = useState('');
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleGenerate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    // Call API to generate cover letter directly
+    const fetchCoverLetter = async () => {
+      setIsGenerating(true);
 
-    if (!jobTitle || !companyName || !jobDescription) {
-      toast.error('Please fill all fields');
-      return;
-    }
-
-    setIsGenerating(true);
-
-    try {
-      const response = await generateCoverLetter(jobTitle, companyName, jobDescription);
-
-      if (response.status === 'success' && response.data) {
-        if (response.data.cover_letter) {
-          setCoverLetterContent(response.data.cover_letter);
-          if (response.data.path) {
-            setDownloadUrl(`https://nehapatil03-404jobnotfound.hf.space/download/${response.data.path}`);
+      try {
+        const result = await apiService.generateCoverLetter(); // No input required from user
+        if (result.status === "success" && result.data) {
+          if (result.data.cover_letter) {
+            setCoverLetterContent(result.data.cover_letter);
+            if (result.data.path) {
+              setDownloadUrl(`https://nehapatil03-404jobnotfound.hf.space/download/${result.data.path}`);
+            }
+            toast.success('Cover letter generated successfully');
+          } else {
+            toast.error('Failed to generate cover letter content');
           }
-          toast.success('Cover letter generated successfully');
         } else {
-          toast.error('Failed to generate cover letter content');
+          toast.error(result.message || 'Failed to generate cover letter');
         }
-      } else {
-        toast.error('Failed to generate cover letter');
+      } catch (error) {
+        console.error('Error generating cover letter:', error);
+        toast.error('An error occurred while generating the cover letter');
+      } finally {
+        setIsGenerating(false);
       }
-    } catch (error) {
-      console.error('Error generating cover letter:', error);
-      toast.error('An error occurred while generating the cover letter');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+    };
+
+    fetchCoverLetter();
+
+  }, []); // Empty dependency array: runs only once on mount
+
 
   const handleDownload = () => {
     if (downloadUrl) {
@@ -61,71 +55,14 @@ const CoverLetterGenerator: React.FC = () => {
       <Sidebar />
 
       <div className="ml-16 transition-all duration-300 py-8 px-4 md:px-8">
-        <h1 className="text-3xl font-bold mb-6">Cover Letter Generator</h1>
+        <h1 className="text-3xl font-bold mb-6">Cover Letter</h1>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Generate Cover Letter</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleGenerate} className="space-y-4">
-                <div>
-                  <label htmlFor="job-title" className="block text-sm font-medium mb-1">
-                    Job Title
-                  </label>
-                  <Input
-                    id="job-title"
-                    value={jobTitle}
-                    onChange={(e) => setJobTitle(e.target.value)}
-                    placeholder="e.g. Frontend Developer"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="company-name" className="block text-sm font-medium mb-1">
-                    Company Name
-                  </label>
-                  <Input
-                    id="company-name"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    placeholder="e.g. Acme Inc."
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="job-description" className="block text-sm font-medium mb-1">
-                    Job Description
-                  </label>
-                  <Textarea
-                    id="job-description"
-                    value={jobDescription}
-                    onChange={(e) => setJobDescription(e.target.value)}
-                    placeholder="Paste the job description here..."
-                    className="min-h-[200px]"
-                    required
-                  />
-                </div>
-
-                <Button 
-                  type="submit" 
-                  className="w-full"
-                  disabled={isGenerating}
-                >
-                  {isGenerating ? 'Generating...' : 'Generate Cover Letter'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
+        <div className="grid md:grid-cols-1 gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex justify-between items-center">
                 <span>Cover Letter Preview</span>
-                {coverLetterContent && downloadUrl && (
+                {coverLetterContent && (
                   <Button size="sm" variant="outline" onClick={handleDownload}>
                     <FileDown className="mr-1 h-4 w-4" />
                     Download
@@ -148,7 +85,7 @@ const CoverLetterGenerator: React.FC = () => {
                       <p>Generating your cover letter...</p>
                     </div>
                   ) : (
-                    <p>Fill in the form and click "Generate Cover Letter" to see a preview here</p>
+                    <p>Loading your cover letter...</p>
                   )}
                 </div>
               )}
