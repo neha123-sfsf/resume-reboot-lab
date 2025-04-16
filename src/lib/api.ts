@@ -7,9 +7,9 @@ export const UPLOAD_ENDPOINT = `${API_BASE_URL}/upload_resume`;
 export const DOWNLOAD_ENDPOINT = `${API_BASE_URL}/download`;
 
 // 2. Type Definitions
-export type ApiMode = 
-  | "ats_score" 
-  | "resume_feedback" 
+export type ApiMode =
+  | "ats_score"
+  | "resume_feedback"
   | "job_recommendation"
   | "cover_letter"
   | "chatbot";
@@ -41,7 +41,7 @@ async function callApi<T = any>(
 ): Promise<ApiResponse<T>> {
   const formData = new FormData();
 
-  // ✅ Important: append the file first
+  // Append the file first
   if (file) {
     formData.append("resume_file", file);
   }
@@ -59,13 +59,28 @@ async function callApi<T = any>(
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP ${response.status}`);
+      // Try to parse error as JSON, fallback to status text
+      let errorMessage = `HTTP ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        // Not JSON, keep default errorMessage
+      }
+      throw new Error(errorMessage);
+    }
+
+    // Try to parse success as JSON, fallback to empty object
+    let data: any = {};
+    try {
+      data = await response.json();
+    } catch {
+      // Not JSON, keep data as empty object
     }
 
     return {
       status: "success",
-      data: await response.json(),
+      data,
     };
   } catch (error) {
     return handleApiError(error, "API request failed");
@@ -113,7 +128,13 @@ export const apiService = {
     try {
       const response = await fetch(`${API_BASE_URL}/health`);
       if (!response.ok) throw new Error(`Health check failed: ${response.status}`);
-      return { status: "success", data: await response.json() };
+      let data = {};
+      try {
+        data = await response.json();
+      } catch {
+        // Not JSON, keep data as empty object
+      }
+      return { status: "success", data };
     } catch (error) {
       return handleApiError(error, "Health check failed");
     }

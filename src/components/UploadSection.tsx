@@ -3,12 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload } from 'lucide-react';
 import { toast } from 'sonner';
-import { ANALYZE_ENDPOINT, UPLOAD_ENDPOINT } from '@/lib/api';
+import { apiService } from '@/lib/api';
 
 const UploadSection: React.FC = () => {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [jobDescription, setJobDescription] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -45,37 +46,14 @@ const UploadSection: React.FC = () => {
 
     try {
       // === Step 1: Upload resume and JD ===
-      const uploadForm = new FormData();
-      uploadForm.append("resume_file", resumeFile);
-      uploadForm.append("jd_text", jobDescription);
-      uploadForm.append("application_status", "rejected");
-
-      const uploadResponse = await fetch(UPLOAD_ENDPOINT, {
-        method: "POST",
-        body: uploadForm,
-      });
-
-      if (!uploadResponse.ok) {
-        const err = await uploadResponse.text();
-        throw new Error(`Upload error: ${err}`);
-      }
+      const uploadResult = await apiService.uploadResume(resumeFile, jobDescription);
+      if (uploadResult.status === "error") throw new Error(uploadResult.message);
 
       // === Step 2: Trigger analysis via /analyze ===
-      const analyzeForm = new FormData();
-      analyzeForm.append("mode", "ats_score");
+      const atsResult = await apiService.getATSScore();
+      if (atsResult.status === "error") throw new Error(atsResult.message);
 
-      const analyzeResponse = await fetch(ANALYZE_ENDPOINT, {
-        method: "POST",
-        body: analyzeForm,
-      });
-
-      if (!analyzeResponse.ok) {
-        const err = await analyzeResponse.text();
-        throw new Error(`Analysis error: ${err}`);
-      }
-
-      const analysisResult = await analyzeResponse.json();
-      console.log('✅ Analysis Result:', analysisResult);
+      setAnalysisResult(atsResult.data);
       toast.success('Resume analyzed successfully!');
 
       // Optional: Scroll to results section
@@ -84,6 +62,9 @@ const UploadSection: React.FC = () => {
         analysisSection.scrollIntoView({ behavior: 'smooth' });
       }
 
+      // Reset form fields
+      setResumeFile(null);
+      setJobDescription('');
     } catch (error) {
       console.error('❌ Upload/Analysis error:', error);
       toast.error(error instanceof Error ? error.message : 'Unexpected error occurred');
@@ -109,7 +90,10 @@ const UploadSection: React.FC = () => {
               Upload your resume in PDF or Word format to get an analysis on how well it matches the job description.
             </p>
 
-            <label className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-white/80 cursor-pointer block hover-scale">
+            <label
+              className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-white/80 cursor-pointer block hover-scale"
+              aria-label="Upload your resume"
+            >
               <Upload className="h-12 w-12 text-gray-400 mb-4 mx-auto" />
               <span className="text-gray-600 mb-2 block">
                 {resumeFile ? getShortFileName(resumeFile.name) : 'Click to upload your resume'}
@@ -120,6 +104,7 @@ const UploadSection: React.FC = () => {
                 accept=".pdf,.doc,.docx"
                 className="hidden"
                 onChange={onFileChange}
+                aria-describedby="resume-upload-description"
               />
             </label>
           </div>
@@ -135,6 +120,7 @@ const UploadSection: React.FC = () => {
               className="input-primary min-h-[200px]"
               value={jobDescription}
               onChange={handleJobDescriptionChange}
+              aria-label="Job description"
             />
           </div>
         </div>
@@ -148,6 +134,16 @@ const UploadSection: React.FC = () => {
             {isUploading ? 'Analyzing...' : 'Submit for Analysis'}
           </Button>
         </div>
+
+        {/* Analysis Results Section */}
+        {analysisResult && (
+          <div id="analysis" className="mt-16 p-8 bg-gray-50 rounded-lg shadow animate-fade-in">
+            <h3 className="text-2xl font-semibold mb-4">Analysis Results</h3>
+            <pre className="whitespace-pre-wrap break-words text-gray-800">
+              {JSON.stringify(analysisResult, null, 2)}
+            </pre>
+          </div>
+        )}
       </div>
     </section>
   );
