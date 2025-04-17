@@ -134,28 +134,14 @@ const AnalysisSection: React.FC = () => {
   }
 
   const atsScore = analysisResult.ats_score?.score || 0;
-
-  // Normalize reasoning for ATSScoreModule
-  const normalizedReasoning: { [key: string]: string[] } = {};
-  const rawReasoning = analysisResult.ats_score?.reasoning || {};
-
-  Object.entries(rawReasoning).forEach(([key, val]) => {
-    if (Array.isArray(val)) {
-      normalizedReasoning[key] = val;
-    } else if (typeof val === "string") {
-      normalizedReasoning[key] = val.split("\n").filter(Boolean);
-    } else {
-      normalizedReasoning[key] = [];
-    }
-  });
   
 
   const atsScoreProps = {
-    score: atsScore,
-    matched_keywords: analysisResult.ats_score?.keywords?.matched || [],
-    missed_keywords: analysisResult.ats_score?.keywords?.unmatched || [],
-    tips: normalizedReasoning["Conclusion"] || [],
-    reasoning: normalizedReasoning,
+      score: atsScore,
+      matched_keywords: analysisResult.ats_score?.keywords?.matched || [],
+      missed_keywords: analysisResult.ats_score?.keywords?.unmatched || [],
+      tips: analysisResult.ats_score?.reasoning?.["Conclusion"] || [],
+      reasoning: analysisResult.ats_score?.reasoning || {}
   };
 
   const feedbackData = parseResumeFeedback(analysisResult.resume_feedback);
