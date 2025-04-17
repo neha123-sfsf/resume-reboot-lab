@@ -114,7 +114,7 @@ const AnalysisSection: React.FC = () => {
 
   // Normalize reasoning for ATSScoreModule
   const normalizedReasoning: { [key: string]: string[] } = {};
-  const rawReasoning = analysisResult.ats_score.reasoning || {};
+  const rawReasoning = analysisResult.ats_score?.reasoning || {};
   Object.entries(rawReasoning).forEach(([key, val]) => {
     if (Array.isArray(val)) {
       normalizedReasoning[key] = val;
