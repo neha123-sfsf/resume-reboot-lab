@@ -35,9 +35,46 @@ interface AnalysisResult {
       unmatched: string[];
     };
   };
-  resume_feedback: ResumeFeedbackData;
-  job_recommendations: JobRecommendation[];
+  resume_feedback: ResumeFeedbackData | string;
+  job_recommendations: JobRecommendation[] | string;
 }
+
+// Helper to parse resume feedback (string or object)
+const parseResumeFeedback = (feedback: ResumeFeedbackData | string): ResumeFeedbackData => {
+  if (typeof feedback === 'object' && feedback !== null) {
+    return feedback;
+  }
+  const lines = (feedback as string).split('\n').map(line => line.trim()).filter(Boolean);
+  return {
+    format_score: 80,
+    parsing_score: 80,
+    feedback_points: lines.length
+      ? [{ type: 'success', message: lines[0] }]
+      : [{ type: 'warning', message: 'No feedback available.' }],
+    improvement_suggestions: lines.slice(1),
+  };
+};
+
+// Helper to parse job recommendations (array or string)
+const parseJobRecommendations = (jobs: JobRecommendation[] | string): JobRecommendation[] => {
+  if (Array.isArray(jobs)) {
+    return jobs;
+  }
+  if (typeof jobs === "string") {
+    const lines = jobs.split('\n').map(line => line.trim()).filter(Boolean);
+    return lines.map((line, idx) => ({
+      id: `rec-${idx}`,
+      title: line,
+      company: "N/A",
+      location: "N/A",
+      matchScore: 0,
+      datePosted: "",
+      summary: line,
+      coverLetterUrl: undefined,
+    }));
+  }
+  return [];
+};
 
 const AnalysisSection: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -47,40 +84,35 @@ const AnalysisSection: React.FC = () => {
     const analyzeResume = async () => {
       try {
         const formData = new FormData();
-  
-        // Get the resume file from localStorage
+        formData.append("mode", "all");
+
+        // Optionally add resume_file if you want to send it
         const resumeFile = localStorage.getItem("uploadedResume");
         if (resumeFile) {
-          // If resumeFile is a string (e.g., base64 or plain text), convert it to a Blob
-          // If it's a base64 string, you may need to decode it accordingly
           formData.append("resume_file", new Blob([resumeFile]), "resume.pdf");
         }
-  
-        formData.append("mode", "all");
-  
+
         const response = await fetch("https://nehapatil03-404jobnotfound.hf.space/analyze", {
           method: "POST",
           body: formData,
         });
-  
+
         const data = await response.json();
-        console.log("✅ Backend Response:", data);
         setAnalysisResult(data);
         setIsVisible(true);
       } catch (error) {
         console.error("❌ Failed to fetch analysis:", error);
       }
     };
-  
+
     analyzeResume();
   }, []);
-  
 
   if (!isVisible || !analysisResult) {
     return null;
   }
 
-  // === Normalize reasoning ===
+  // Normalize reasoning for ATSScoreModule
   const normalizedReasoning: { [key: string]: string[] } = {};
   const rawReasoning = analysisResult.ats_score.reasoning || {};
   Object.entries(rawReasoning).forEach(([key, val]) => {
@@ -93,7 +125,6 @@ const AnalysisSection: React.FC = () => {
     }
   });
 
-  // ✅ Construct ATS props
   const atsScoreProps = {
     score: analysisResult.ats_score.score,
     matched_keywords: analysisResult.ats_score.keywords?.matched || [],
@@ -101,6 +132,9 @@ const AnalysisSection: React.FC = () => {
     tips: normalizedReasoning["Conclusion"] || [],
     reasoning: normalizedReasoning,
   };
+
+  const feedbackData = parseResumeFeedback(analysisResult.resume_feedback);
+  const jobRecsData = parseJobRecommendations(analysisResult.job_recommendations);
 
   return (
     <section
@@ -111,11 +145,10 @@ const AnalysisSection: React.FC = () => {
         <h2 className="text-4xl font-bold mb-12 text-center animate-fade-in">
           Your Resume Analysis
         </h2>
-
         <div className="space-y-10">
           <ATSScoreModule {...atsScoreProps} />
-          <ResumeFeedbackModule feedback={analysisResult.resume_feedback} />
-          <JobRecommendationsModule jobs={analysisResult.job_recommendations} />
+          <ResumeFeedbackModule feedback={feedbackData} />
+          <JobRecommendationsModule jobs={jobRecsData} />
         </div>
       </div>
     </section>
