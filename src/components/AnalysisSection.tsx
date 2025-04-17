@@ -27,6 +27,13 @@ interface JobRecommendation {
 }
 
 interface AnalysisResult {
+  score?: number;
+  resume_file?: string;
+  keywords?: {
+    matched: string[];
+    unmatched: string[];
+  };
+  reasoning?: { [key: string]: string | string[] };
   ats_score: {
     score: number;
     reasoning: { [key: string]: string | string[] };
@@ -37,6 +44,7 @@ interface AnalysisResult {
   };
   resume_feedback: ResumeFeedbackData | string;
   job_recommendations: JobRecommendation[] | string;
+   error?: string;  // To show errors from the backend
 }
 
 // Helper to parse resume feedback (string or object)
@@ -97,7 +105,16 @@ const AnalysisSection: React.FC = () => {
           body: formData,
         });
 
-        const data = await response.json();
+        const data: AnalysisResult = await response.json();
+
+        if (data.error) {
+            console.error('Backend Error:', data.error);
+            setAnalysisResult({ ...data, ats_score: {} as any}); // Set empty ats_score to prevent errors
+            setIsVisible(true);
+            return;
+        }
+        
+        console.log("✅ Backend Response:", data);
         setAnalysisResult(data);
         setIsVisible(true);
       } catch (error) {
@@ -111,10 +128,17 @@ const AnalysisSection: React.FC = () => {
   if (!isVisible || !analysisResult) {
     return null;
   }
+  
+  if (analysisResult.error) {
+      return <div className="text-red-500">Error: {analysisResult.error}</div>;
+  }
+
+  const atsScore = analysisResult.ats_score?.score || 0;
 
   // Normalize reasoning for ATSScoreModule
   const normalizedReasoning: { [key: string]: string[] } = {};
   const rawReasoning = analysisResult.ats_score?.reasoning || {};
+
   Object.entries(rawReasoning).forEach(([key, val]) => {
     if (Array.isArray(val)) {
       normalizedReasoning[key] = val;
@@ -124,11 +148,12 @@ const AnalysisSection: React.FC = () => {
       normalizedReasoning[key] = [];
     }
   });
+  
 
   const atsScoreProps = {
-    score: analysisResult.ats_score.score,
-    matched_keywords: analysisResult.ats_score.keywords?.matched || [],
-    missed_keywords: analysisResult.ats_score.keywords?.unmatched || [],
+    score: atsScore,
+    matched_keywords: analysisResult.ats_score?.keywords?.matched || [],
+    missed_keywords: analysisResult.ats_score?.keywords?.unmatched || [],
     tips: normalizedReasoning["Conclusion"] || [],
     reasoning: normalizedReasoning,
   };
