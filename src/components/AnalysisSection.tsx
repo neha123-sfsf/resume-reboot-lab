@@ -46,14 +46,23 @@ const AnalysisSection: React.FC = () => {
   useEffect(() => {
     const analyzeResume = async () => {
       try {
+        const formData = new FormData();
+  
+        // Get the resume file from localStorage
+        const resumeFile = localStorage.getItem("uploadedResume");
+        if (resumeFile) {
+          // If resumeFile is a string (e.g., base64 or plain text), convert it to a Blob
+          // If it's a base64 string, you may need to decode it accordingly
+          formData.append("resume_file", new Blob([resumeFile]), "resume.pdf");
+        }
+  
+        formData.append("mode", "all");
+  
         const response = await fetch("https://nehapatil03-404jobnotfound.hf.space/analyze", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ mode: "all" }),
+          body: formData,
         });
-
+  
         const data = await response.json();
         console.log("✅ Backend Response:", data);
         setAnalysisResult(data);
@@ -62,9 +71,10 @@ const AnalysisSection: React.FC = () => {
         console.error("❌ Failed to fetch analysis:", error);
       }
     };
-
+  
     analyzeResume();
   }, []);
+  
 
   if (!isVisible || !analysisResult) {
     return null;
