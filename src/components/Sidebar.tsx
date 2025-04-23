@@ -43,9 +43,9 @@ const Sidebar: React.FC = () => {
       <div className="flex flex-col h-full">
         <div className="p-3 mb-4 flex items-center justify-center h-16 border-b border-gray-800">
           {expanded ? (
-            <span className="font-bold text-sm">404: Job Not Found</span>
+            <span className="font-bold text-sm">Opportune</span>
           ) : (
-            <span className="font-bold text-xl">404</span>
+            <span className="font-bold text-xl">O</span>
           )}
         </div>
         
