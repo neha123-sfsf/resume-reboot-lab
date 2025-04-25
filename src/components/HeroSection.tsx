@@ -29,35 +29,20 @@ const HeroSection: React.FC = () => {
           Optimize your resume to get more interviews with our AI-powered insights
         </p>
         
-        <div className="grid md:grid-cols-2 gap-8 mt-12">
-          <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 animate-fade-in delay-200">
-            <div className="aspect-square rounded-xl overflow-hidden mb-4">
-              <img 
-                src="https://images.unsplash.com/photo-1498050108023-c5249f4df085" 
-                alt="Modern workspace" 
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Resume Analysis</h3>
-            <p className="text-gray-600">Get detailed insights on how to improve your resume's impact</p>
-          </div>
-          
-          <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 animate-fade-in delay-300">
-            <div className="aspect-square rounded-xl overflow-hidden mb-4">
-              <img 
-                src="https://images.unsplash.com/photo-1553877522-43269d4ea984" 
-                alt="Career growth" 
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Job Matching</h3>
-            <p className="text-gray-600">Find the perfect opportunities that match your skills and experience</p>
+        <div className="mt-12 relative group animate-fade-in delay-200">
+          <div className="overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+            <img 
+              src="https://images.unsplash.com/photo-1551038247-3d9af20df552" 
+              alt="Professional workspace" 
+              className="w-full h-[400px] object-cover transform group-hover:scale-105 transition-transform duration-700"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent rounded-2xl"></div>
           </div>
         </div>
         
         <Button 
           onClick={scrollToUpload} 
-          className="mt-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-6 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in delay-400"
+          className="mt-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-6 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in delay-300"
         >
           Start Your Journey
         </Button>
